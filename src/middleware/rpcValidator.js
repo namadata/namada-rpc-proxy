@@ -127,8 +127,28 @@ class RpcValidator {
       }
     }
 
+    // Pre-process array parameters - parse JSON strings to actual arrays
+    const processedParams = { ...queryParams };
+    if (validatorInfo.operation?.parameters) {
+      for (const param of validatorInfo.operation.parameters) {
+        if (param.in === 'query' && param.schema.type === 'array' && typeof processedParams[param.name] === 'string') {
+          try {
+            // Try to parse JSON array strings
+            processedParams[param.name] = JSON.parse(processedParams[param.name]);
+          } catch (error) {
+            // If not valid JSON, leave as string (will fail validation)
+            logger.debug('Failed to parse array parameter as JSON', {
+              parameter: param.name,
+              value: processedParams[param.name],
+              error: error.message
+            });
+          }
+        }
+      }
+    }
+
     // Validate query parameters
-    const isValid = validatorInfo.validator(queryParams);
+    const isValid = validatorInfo.validator(processedParams);
     
     if (!isValid) {
       const errors = validatorInfo.validator.errors.map(error => ({
@@ -143,7 +163,15 @@ class RpcValidator {
         code: 'VALIDATION_ERROR',
         statusCode: 400,
         details: errors,
-        operation: validatorInfo.operation
+        operation: validatorInfo.operation,
+        requiredParameters: validatorInfo.operation?.parameters
+          ?.filter(p => p.required)
+          .map(p => ({
+            name: p.name,
+            description: p.description,
+            type: p.schema?.type || 'string',
+            example: p.schema?.example
+          }))
       };
     }
 
