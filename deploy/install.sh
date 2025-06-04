@@ -135,17 +135,18 @@ print_status "Systemd service installed and enabled"
 # Setup nginx configuration
 echo -e "\n${BLUE}🌐 Setting up Nginx Configuration${NC}"
 NGINX_CONFIG_FILE="/etc/nginx/sites-available/${NGINX_SITE_NAME}"
-cp "$INSTALL_DIR/deploy/nginx-namada-rpc-proxy.conf" "$NGINX_CONFIG_FILE"
+cp "$INSTALL_DIR/deploy/nginx-namada-rpc-proxy-http.conf" "$NGINX_CONFIG_FILE"
 
 # Enable nginx site
 ln -sf "/etc/nginx/sites-available/${NGINX_SITE_NAME}" "/etc/nginx/sites-enabled/"
-print_status "Nginx configuration installed"
+print_status "Nginx HTTP configuration installed"
 
 # Test nginx configuration
 if nginx -t; then
     print_status "Nginx configuration is valid"
 else
     print_error "Nginx configuration has errors. Please check manually."
+    exit 1
 fi
 
 # Start the service
@@ -165,14 +166,20 @@ print_status "Nginx reloaded"
 
 # SSL Setup reminder
 echo -e "\n${BLUE}🔒 SSL Certificate Setup${NC}"
-print_warning "IMPORTANT: Update the nginx configuration with your domain name:"
-echo "  1. Edit $NGINX_CONFIG_FILE"
-echo "  2. Replace 'your-domain.com' with 'namacall.namadata.xyz'"
-echo "  3. Set up SSL certificates with Let's Encrypt:"
+print_warning "IMPORTANT: SSL is not yet configured. The service is running on HTTP only."
+print_info "To add SSL security, follow these steps:"
 echo ""
+echo "1. Install certbot (if not already installed):"
 echo -e "${YELLOW}sudo apt install certbot python3-certbot-nginx${NC}"
+echo ""
+echo "2. Get SSL certificate for your domain:"
 echo -e "${YELLOW}sudo certbot --nginx -d namacall.namadata.xyz${NC}"
 echo ""
+echo "3. (Optional) Switch to full HTTPS configuration:"
+echo -e "${YELLOW}sudo cp $INSTALL_DIR/deploy/nginx-namada-rpc-proxy.conf $NGINX_CONFIG_FILE${NC}"
+echo -e "${YELLOW}sudo nginx -t && sudo systemctl reload nginx${NC}"
+echo ""
+print_info "The current HTTP configuration will work for testing, but HTTPS is required for production."
 
 # Firewall configuration
 echo -e "${BLUE}🔥 Firewall Configuration${NC}"
@@ -193,12 +200,11 @@ echo -e "\nNginx Status:"
 nginx -t && echo "✓ Nginx configuration is valid" || echo "✗ Nginx configuration has errors"
 
 echo -e "\n${BLUE}📝 Next Steps${NC}"
-echo "1. Edit nginx config: nano $NGINX_CONFIG_FILE"
-echo "   - Replace 'your-domain.com' with 'namacall.namadata.xyz'"
-echo "2. Test nginx config: sudo nginx -t"
-echo "3. Reload nginx: sudo systemctl reload nginx"
-echo "4. Set up SSL: sudo certbot --nginx -d namacall.namadata.xyz"
-echo "5. Edit environment: nano $INSTALL_DIR/.env"
+echo "1. Test the service: curl http://namacall.namadata.xyz/health"
+echo "2. Install SSL certificate: sudo certbot --nginx -d namacall.namadata.xyz"
+echo "3. Test with SSL: curl https://namacall.namadata.xyz/health"
+echo "4. (Optional) Switch to full HTTPS config: sudo cp $INSTALL_DIR/deploy/nginx-namada-rpc-proxy.conf $NGINX_CONFIG_FILE"
+echo "5. Edit environment if needed: nano $INSTALL_DIR/.env"
 echo ""
 
 echo -e "${BLUE}🔍 Useful Commands${NC}"
