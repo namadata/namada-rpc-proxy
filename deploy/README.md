@@ -123,7 +123,7 @@ Template: `production.env` → `.env`
 Key variables:
 ```bash
 NODE_ENV=production
-PORT=3000
+PORT=3001
 LOG_LEVEL=info
 HEALTH_CHECK_INTERVAL=30000
 REGISTRY_UPDATE_INTERVAL=600000
@@ -303,10 +303,10 @@ sudo systemctl show namada-rpc-proxy --property=CPUQuota
 **Network Issues:**
 ```bash
 # Check listening ports
-sudo netstat -tlnp | grep :3000
+sudo netstat -tlnp | grep :3001
 
 # Test internal connectivity
-curl -f http://localhost:3000/health
+curl -f http://localhost:3001/health
 
 # Check nginx upstream
 sudo nginx -T | grep upstream

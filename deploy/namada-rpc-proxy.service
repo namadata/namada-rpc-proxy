@@ -16,7 +16,7 @@ TimeoutStopSec=30
 
 # Environment variables
 Environment=NODE_ENV=production
-Environment=PORT=3000
+Environment=PORT=3001
 Environment=LOG_LEVEL=info
 Environment=NODE_OPTIONS="--max-old-space-size=1536"
 

@@ -9,8 +9,9 @@
 const axios = require('axios');
 const yaml = require('js-yaml');
 const fs = require('fs');
+const chalk = require('chalk');
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'http://localhost:3001';
 const CHAINS = {
   mainnet: 'namada',
   testnet: 'housefiretestnet'

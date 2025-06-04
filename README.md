@@ -169,7 +169,7 @@ Key configuration options in `.env`:
 ```bash
 # Server
 NODE_ENV=production
-PORT=3000
+PORT=3001
 LOG_LEVEL=info
 
 # Health Monitoring  
@@ -314,7 +314,7 @@ sudo systemctl status nginx
 
 # Performance issues
 htop
-sudo netstat -tlnp | grep :3000
+sudo netstat -tlnp | grep :3001
 ```
 
 ## 🔒 Security

@@ -5,7 +5,8 @@ require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
 const config = {
   server: {
-    port: parseInt(process.env.PORT, 10) || 3000,
+    port: parseInt(process.env.PORT, 10) || 3001,
+    host: process.env.HOST || '127.0.0.1',
     nodeEnv: process.env.NODE_ENV || 'development',
     serviceDomain: process.env.SERVICE_DOMAIN || 'namacall.namadata.xyz'
   },

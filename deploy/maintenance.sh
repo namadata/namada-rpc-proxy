@@ -46,14 +46,14 @@ if [[ "$CURRENT_COMMIT" == "$LATEST_COMMIT" ]]; then
         log "Service is running normally"
         
         # Quick health check
-        if curl -f -s http://localhost:3000/health >/dev/null 2>&1; then
+        if curl -f -s http://localhost:3001/health >/dev/null 2>&1; then
             log "Health check passed"
             exit 0
         else
             log "WARNING: Health check failed, restarting service"
             systemctl restart "$SERVICE_NAME"
             sleep 5
-            if curl -f -s http://localhost:3000/health >/dev/null 2>&1; then
+            if curl -f -s http://localhost:3001/health >/dev/null 2>&1; then
                 log "Service restarted successfully"
             else
                 log "ERROR: Service restart failed"

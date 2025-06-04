@@ -266,7 +266,7 @@ print_info "Performing health check..."
 sleep 5
 
 # Test health endpoint
-if curl -f -s http://localhost:3000/health >/dev/null; then
+if curl -f -s http://localhost:3001/health >/dev/null; then
     print_status "Health check passed"
 else
     print_error "Health check failed!"
@@ -274,7 +274,7 @@ else
 fi
 
 # Test RPC endpoints
-if curl -f -s http://localhost:3000/namada/status >/dev/null; then
+if curl -f -s http://localhost:3001/namada/status >/dev/null; then
     print_status "RPC endpoints responding"
 else
     print_warning "RPC endpoints may be initializing (this is normal)"
@@ -303,5 +303,5 @@ echo ""
 print_info "Useful commands:"
 echo "  Service status:  sudo systemctl status $SERVICE_NAME"
 echo "  Service logs:    sudo journalctl -u $SERVICE_NAME -f"
-echo "  Health check:    curl http://localhost:3000/health"
+echo "  Health check:    curl http://localhost:3001/health"
 echo "  Rollback:        sudo systemctl stop $SERVICE_NAME && sudo rm -rf $SERVICE_DIR && sudo cp -r $BACKUP_PATH $SERVICE_DIR && sudo chown -R $SERVICE_USER:$SERVICE_USER $SERVICE_DIR && sudo systemctl start $SERVICE_NAME" 

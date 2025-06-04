@@ -49,18 +49,18 @@ RUN mkdir -p logs && chown namada:nodejs logs
 
 # Set environment variables
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=3001
 ENV LOG_LEVEL=info
 
 # Expose port
-EXPOSE 3000
+EXPOSE 3001
 
 # Switch to non-root user
 USER namada
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:3000/health/live || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:3001/health/live || exit 1
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
