@@ -51,7 +51,69 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-# Check prerequisites
+# Important warning about overwriting existing configuration
+echo -e "${YELLOW}⚠️  IMPORTANT WARNING ⚠️${NC}"
+echo -e "${YELLOW}========================${NC}"
+echo ""
+print_warning "This installation script will:"
+echo "  • Overwrite existing nginx configuration with HTTP-only setup"
+echo "  • Replace any existing SSL/HTTPS configuration"
+echo "  • Reset the service to default configuration"
+echo ""
+
+# Check for existing SSL certificates
+SSL_EXISTS=false
+HTTPS_CONFIG_EXISTS=false
+
+if [[ -d "/etc/letsencrypt/live" ]]; then
+    SSL_DOMAINS=$(ls /etc/letsencrypt/live/ 2>/dev/null | grep -v README)
+    if [[ -n "$SSL_DOMAINS" ]]; then
+        SSL_EXISTS=true
+        print_warning "Found existing SSL certificates for: $SSL_DOMAINS"
+    fi
+fi
+
+# Check for existing HTTPS nginx config
+if [[ -f "/etc/nginx/sites-available/namada-rpc-proxy" ]]; then
+    if grep -q "listen 443 ssl" "/etc/nginx/sites-available/namada-rpc-proxy" 2>/dev/null; then
+        HTTPS_CONFIG_EXISTS=true
+        print_warning "Found existing HTTPS configuration in nginx"
+    fi
+fi
+
+if [[ "$SSL_EXISTS" == true ]] || [[ "$HTTPS_CONFIG_EXISTS" == true ]]; then
+    echo ""
+    print_error "EXISTING SSL/HTTPS SETUP DETECTED!"
+    echo "This script will replace your HTTPS configuration with HTTP-only setup."
+    echo "After installation, you will need to:"
+    echo "  1. Switch back to HTTPS config: sudo cp $INSTALL_DIR/deploy/nginx-namada-rpc-proxy.conf /etc/nginx/sites-available/namada-rpc-proxy"
+    echo "  2. Update SSL paths in the config"
+    echo "  3. Test and reload nginx: sudo nginx -t && sudo systemctl reload nginx"
+    echo ""
+    
+    read -p "Do you want to continue and overwrite the existing setup? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        print_info "Installation cancelled by user."
+        print_info "To update without overwriting nginx config, use: sudo $INSTALL_DIR/deploy/update.sh"
+        exit 0
+    fi
+    
+    print_warning "Proceeding with installation. Your SSL setup will be overwritten."
+    echo ""
+fi
+
+# Additional confirmation for production systems
+if systemctl is-active --quiet namada-rpc-proxy 2>/dev/null; then
+    print_warning "Namada RPC Proxy service is currently running."
+    read -p "This will stop and reconfigure the running service. Continue? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        print_info "Installation cancelled by user."
+        exit 0
+    fi
+fi
+
 echo -e "${BLUE}📋 Checking Prerequisites${NC}"
 
 # Check if Node.js is installed
@@ -226,6 +288,31 @@ echo ""
 echo -e "${GREEN}🎉 Installation complete!${NC}"
 echo "Your Namada RPC Proxy is now running as user '$SERVICE_USER'"
 echo "Complete the SSL setup and domain configuration to finish."
+
+# Reminder for users who had SSL certificates
+if [[ "$SSL_EXISTS" == true ]] || [[ "$HTTPS_CONFIG_EXISTS" == true ]]; then
+    echo ""
+    echo -e "${YELLOW}🔒 SSL CONFIGURATION REMINDER${NC}"
+    echo -e "${YELLOW}==============================${NC}"
+    print_warning "You had existing SSL certificates. To restore HTTPS:"
+    echo ""
+    echo "1. Switch to HTTPS configuration:"
+    echo -e "${BLUE}sudo cp $INSTALL_DIR/deploy/nginx-namada-rpc-proxy.conf /etc/nginx/sites-available/namada-rpc-proxy${NC}"
+    echo ""
+    echo "2. Update SSL certificate paths:"
+    for domain in $SSL_DOMAINS; do
+        echo -e "${BLUE}sudo sed -i 's|/etc/ssl/certs/ssl-cert-snakeoil.pem|/etc/letsencrypt/live/$domain/fullchain.pem|g' /etc/nginx/sites-available/namada-rpc-proxy${NC}"
+        echo -e "${BLUE}sudo sed -i 's|/etc/ssl/private/ssl-cert-snakeoil.key|/etc/letsencrypt/live/$domain/privkey.pem|g' /etc/nginx/sites-available/namada-rpc-proxy${NC}"
+        break # Only show for the first domain
+    done
+    echo ""
+    echo "3. Test and reload nginx:"
+    echo -e "${BLUE}sudo nginx -t && sudo systemctl reload nginx${NC}"
+    echo ""
+    echo "4. Test HTTPS:"
+    echo -e "${BLUE}curl -I https://namacall.namadata.xyz/health${NC}"
+    echo ""
+fi
 
 # Setup update scripts
 echo -e "\n${BLUE}🔄 Setting up Update Scripts${NC}"

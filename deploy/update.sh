@@ -24,11 +24,38 @@ NGINX_CONFIG="/etc/nginx/sites-available/namada-rpc-proxy"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_PATH="${BACKUP_DIR}/backup_${TIMESTAMP}"
 
+# Detect HTTPS configuration
+HTTPS_ENABLED=false
+SERVICE_DOMAIN="namacall.namadata.xyz"
+
+if [[ -f "$NGINX_CONFIG" ]] && grep -q "listen 443 ssl" "$NGINX_CONFIG" 2>/dev/null; then
+    HTTPS_ENABLED=true
+fi
+
+# Set health check URLs based on HTTPS availability
+if [[ "$HTTPS_ENABLED" == true ]]; then
+    HEALTH_URL="https://${SERVICE_DOMAIN}/health"
+    RPC_TEST_URL="https://${SERVICE_DOMAIN}/namada/status"
+    LOCAL_HEALTH_URL="http://localhost:3001/health"  # Always test local service directly
+else
+    HEALTH_URL="http://localhost:3001/health"
+    RPC_TEST_URL="http://localhost:3001/namada/status"
+    LOCAL_HEALTH_URL="http://localhost:3001/health"
+fi
+
 echo -e "${BLUE}🔄 Namada RPC Proxy Update Script${NC}"
 echo -e "${BLUE}=================================${NC}"
 echo "Service: $SERVICE_NAME"
 echo "Service Directory: $SERVICE_DIR"
 echo "Backup Directory: $BACKUP_PATH"
+
+if [[ "$HTTPS_ENABLED" == true ]]; then
+    echo "SSL/HTTPS: ✅ Detected (will preserve configuration)"
+    echo "Health checks: Using HTTPS endpoints"
+else
+    echo "SSL/HTTPS: ⚠️  Not detected (HTTP mode)"
+    echo "Health checks: Using local HTTP endpoints"
+fi
 echo ""
 
 # Function to print colored output
@@ -191,13 +218,32 @@ echo -e "\n${BLUE}⚙️ Checking Configuration${NC}"
 # Check if nginx config was updated
 if [[ -f "deploy/nginx-namada-rpc-proxy.conf" ]]; then
     if ! diff -q "$NGINX_CONFIG" "deploy/nginx-namada-rpc-proxy.conf" >/dev/null 2>&1; then
-        print_warning "Nginx configuration has been updated"
-        read -p "Update nginx configuration? (y/N): " -n 1 -r
-        echo
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            cp "deploy/nginx-namada-rpc-proxy.conf" "$NGINX_CONFIG"
-            nginx -t && systemctl reload nginx
-            print_status "Nginx configuration updated"
+        print_warning "Nginx configuration template has been updated"
+        
+        if [[ "$HTTPS_ENABLED" == true ]]; then
+            print_info "HTTPS configuration detected - will preserve SSL setup"
+            print_warning "Manual review recommended for nginx configuration changes"
+            print_info "Current config: $NGINX_CONFIG"
+            print_info "Updated template: deploy/nginx-namada-rpc-proxy.conf"
+            print_info "To update manually:"
+            echo "  1. Review changes: diff $NGINX_CONFIG deploy/nginx-namada-rpc-proxy.conf"
+            echo "  2. Merge important updates while preserving SSL configuration"
+            echo "  3. Test: sudo nginx -t"
+            echo "  4. Reload: sudo systemctl reload nginx"
+        else
+            read -p "Update nginx configuration? (y/N): " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                cp "deploy/nginx-namada-rpc-proxy.conf" "$NGINX_CONFIG"
+                nginx -t && systemctl reload nginx
+                print_status "Nginx configuration updated"
+            fi
+        fi
+    else
+        if [[ "$HTTPS_ENABLED" == true ]]; then
+            print_status "HTTPS nginx configuration is up to date"
+        else
+            print_status "HTTP nginx configuration is up to date"
         fi
     fi
 fi
@@ -267,7 +313,7 @@ print_info "Performing health check..."
 sleep 5
 
 # Test health endpoint
-if curl -f -s http://localhost:3001/health >/dev/null; then
+if curl -f -s $HEALTH_URL >/dev/null; then
     print_status "Health check passed"
 else
     print_error "Health check failed!"
@@ -275,7 +321,7 @@ else
 fi
 
 # Test RPC endpoints
-if curl -f -s http://localhost:3001/namada/status >/dev/null; then
+if curl -f -s $RPC_TEST_URL >/dev/null; then
     print_status "RPC endpoints responding"
 else
     print_warning "RPC endpoints may be initializing (this is normal)"
@@ -304,5 +350,5 @@ echo ""
 print_info "Useful commands:"
 echo "  Service status:  sudo systemctl status $SERVICE_NAME"
 echo "  Service logs:    sudo journalctl -u $SERVICE_NAME -f"
-echo "  Health check:    curl http://localhost:3001/health"
+echo "  Health check:    curl $HEALTH_URL"
 echo "  Rollback:        sudo systemctl stop $SERVICE_NAME && sudo rm -rf $SERVICE_DIR && sudo cp -r $BACKUP_PATH $SERVICE_DIR && sudo chown -R $SERVICE_USER:$SERVICE_USER $SERVICE_DIR && sudo systemctl start $SERVICE_NAME" 

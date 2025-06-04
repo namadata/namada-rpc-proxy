@@ -9,6 +9,24 @@ set -e
 SERVICE_NAME="namada-rpc-proxy"
 SERVICE_DIR="/home/namada-rpc-proxy/namada-rpc-proxy"
 LOG_FILE="/var/log/namada-rpc-proxy-maintenance.log"
+NGINX_CONFIG="/etc/nginx/sites-available/namada-rpc-proxy"
+
+# Detect HTTPS configuration
+HTTPS_ENABLED=false
+SERVICE_DOMAIN="namacall.namadata.xyz"
+
+if [[ -f "$NGINX_CONFIG" ]] && grep -q "listen 443 ssl" "$NGINX_CONFIG" 2>/dev/null; then
+    HTTPS_ENABLED=true
+fi
+
+# Set health check URLs based on HTTPS availability
+if [[ "$HTTPS_ENABLED" == true ]]; then
+    HEALTH_URL="https://${SERVICE_DOMAIN}/health"
+    LOCAL_HEALTH_URL="http://localhost:3001/health"  # Always test local service directly
+else
+    HEALTH_URL="http://localhost:3001/health"
+    LOCAL_HEALTH_URL="http://localhost:3001/health"
+fi
 
 # Logging function
 log() {
@@ -22,6 +40,13 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 log "Starting maintenance check..."
+
+# Log HTTPS configuration status
+if [[ "$HTTPS_ENABLED" == true ]]; then
+    log "HTTPS configuration detected - using secure endpoints"
+else
+    log "HTTP configuration detected - using local endpoints"
+fi
 
 # Check if service directory exists
 if [[ ! -d "$SERVICE_DIR" ]]; then
@@ -46,14 +71,14 @@ if [[ "$CURRENT_COMMIT" == "$LATEST_COMMIT" ]]; then
         log "Service is running normally"
         
         # Quick health check
-        if curl -f -s http://localhost:3001/health >/dev/null 2>&1; then
+        if curl -f -s $HEALTH_URL >/dev/null 2>&1; then
             log "Health check passed"
             exit 0
         else
             log "WARNING: Health check failed, restarting service"
             systemctl restart "$SERVICE_NAME"
             sleep 5
-            if curl -f -s http://localhost:3001/health >/dev/null 2>&1; then
+            if curl -f -s $HEALTH_URL >/dev/null 2>&1; then
                 log "Service restarted successfully"
             else
                 log "ERROR: Service restart failed"
