@@ -2,6 +2,8 @@
 
 A high-performance, production-ready multi-chain CometBFT RPC proxy and load balancer for Namada mainnet and testnets. This system automatically monitors RPC endpoint health and intelligently routes requests to the most responsive and synchronized nodes.
 
+Live Endpoint: https://namacall.namadata.xyz
+
 ## 🏗️ System Overview
 
 ```
@@ -388,47 +390,6 @@ The service runs on port 3001 by default. If you see `EADDRINUSE` errors, check 
 ```bash
 sudo netstat -tlnp | grep :3001
 ```
-
-## 🔒 Security
-
-### Network Security
-- **Firewall**: Only SSH, HTTP, and HTTPS ports open
-- **SSL/TLS**: A+ rated configuration with HSTS
-- **Rate Limiting**: DDoS protection at nginx level
-- **Request Validation**: Invalid requests blocked before forwarding
-
-### Application Security  
-- **Dedicated User**: Isolated system user with minimal privileges
-- **Filesystem Protection**: Read-only access with restricted paths
-- **Resource Limits**: Memory and CPU usage caps
-- **Input Validation**: All RPC requests validated against OpenAPI spec
-
-### Monitoring Security
-- **Internal Endpoints**: Detailed metrics only on localhost
-- **Access Logs**: Comprehensive request logging
-- **Error Tracking**: Structured error logging with correlation IDs
-
-## 📚 API Documentation
-
-### RPC Endpoints
-
-**Namada Mainnet:**
-- `POST/GET /namada/{rpc_method}` - Standard RPC endpoints
-- `POST/GET /namada/archive/{rpc_method}` - Archive node endpoints
-
-**Housefire Testnet:**  
-- `POST/GET /housefiretestnet/{rpc_method}` - Standard RPC endpoints
-- `POST/GET /housefiretestnet/archive/{rpc_method}` - Archive node endpoints
-
-### Available RPC Methods
-
-All CometBFT RPC methods are supported:
-- `status`, `health`, `net_info` - Node information
-- `block`, `block_by_hash`, `blockchain` - Block data  
-- `tx`, `tx_search`, `block_search` - Transaction queries
-- `validators`, `consensus_params` - Network parameters
-- `abci_query`, `abci_info` - Application queries
-- `broadcast_tx_*` - Transaction broadcasting
 
 ### Request Validation
 
