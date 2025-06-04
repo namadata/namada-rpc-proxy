@@ -317,6 +317,17 @@ htop
 sudo netstat -tlnp | grep :3001
 ```
 
+### Common Issues
+
+**Node.js Out Of Memory (OOM) Errors:**
+If you see "MemoryChunk allocation failed during deserialization" errors, this is caused by the `MemoryDenyWriteExecute=yes` systemd security restriction being incompatible with Node.js JIT compilation. Our service configuration has this disabled for Node.js compatibility while maintaining other security protections.
+
+**Port Conflicts:**
+The service runs on port 3001 by default. If you see `EADDRINUSE` errors, check what's using the port:
+```bash
+sudo netstat -tlnp | grep :3001
+```
+
 ## 🔒 Security
 
 ### Network Security

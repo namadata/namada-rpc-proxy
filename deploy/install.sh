@@ -123,14 +123,19 @@ fi
 # Setup systemd service
 echo -e "\n${BLUE}🔧 Setting up Systemd Service${NC}"
 
-# Update service file with correct user and paths
+# Copy service file directly (already configured for the correct user and paths)
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
-sed "s|User=ubuntu|User=$SERVICE_USER|g; s|Group=ubuntu|Group=$SERVICE_USER|g; s|/home/ubuntu/namada-rpc-proxy|$INSTALL_DIR|g" \
-    "$INSTALL_DIR/deploy/namada-rpc-proxy.service" > "$SERVICE_FILE"
+cp "$INSTALL_DIR/deploy/namada-rpc-proxy.service" "$SERVICE_FILE"
+
+# Replace generic paths with actual install directory in service file
+sed -i "s|/home/namada-rpc-proxy/namada-rpc-proxy|$INSTALL_DIR|g" "$SERVICE_FILE"
+
+print_status "Systemd service installed (optimized for Node.js compatibility)"
+print_info "Service configured with MemoryDenyWriteExecute disabled for Node.js JIT support"
 
 systemctl daemon-reload
 systemctl enable "$SERVICE_NAME"
-print_status "Systemd service installed and enabled"
+print_status "Systemd service enabled"
 
 # Setup nginx configuration
 echo -e "\n${BLUE}🌐 Setting up Nginx Configuration${NC}"

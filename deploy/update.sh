@@ -206,6 +206,7 @@ fi
 if [[ -f "deploy/namada-rpc-proxy.service" ]]; then
     if ! diff -q "/etc/systemd/system/namada-rpc-proxy.service" "deploy/namada-rpc-proxy.service" >/dev/null 2>&1; then
         print_warning "Systemd service configuration has been updated"
+        print_info "This update includes Node.js compatibility fixes (MemoryDenyWriteExecute disabled)"
         read -p "Update systemd service? (y/N): " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then

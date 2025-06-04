@@ -9,7 +9,7 @@ Type=simple
 User=namada-rpc-proxy
 Group=namada-rpc-proxy
 WorkingDirectory=/home/namada-rpc-proxy/namada-rpc-proxy
-ExecStart=/usr/bin/node --max-old-space-size=1536 src/index-minimal.js
+ExecStart=/usr/bin/node --max-old-space-size=2048 src/index.js
 Restart=always
 RestartSec=10
 TimeoutStopSec=30
@@ -18,7 +18,7 @@ TimeoutStopSec=30
 Environment=NODE_ENV=production
 Environment=PORT=3001
 Environment=LOG_LEVEL=info
-Environment=NODE_OPTIONS="--max-old-space-size=1536"
+Environment=NODE_OPTIONS="--max-old-space-size=2048"
 
 # Security settings
 NoNewPrivileges=yes
@@ -32,13 +32,13 @@ ProtectControlGroups=yes
 RestrictRealtime=yes
 RestrictNamespaces=yes
 LockPersonality=yes
-MemoryDenyWriteExecute=yes
+# MemoryDenyWriteExecute=yes  # Commented out - incompatible with Node.js JIT compilation
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 
 # Resource limits
 LimitNOFILE=65536
 LimitNPROC=4096
-MemoryMax=2G
+MemoryMax=3G
 CPUQuota=200%
 
 # Logging

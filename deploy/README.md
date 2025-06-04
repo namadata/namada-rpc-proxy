@@ -136,7 +136,8 @@ RATE_LIMIT_MAX_REQUESTS=100
 
 **Configuration**: `namada-rpc-proxy.service`
 - Security hardening (NoNewPrivileges, ProtectSystem, etc.)
-- Resource limits (1GB memory, 200% CPU)
+- **Node.js Compatibility**: `MemoryDenyWriteExecute` disabled for JIT support
+- Resource limits (3GB memory, 200% CPU, increased from previous limits)
 - Automatic restart with 10-second delay
 - Proper logging to systemd journal
 
@@ -151,6 +152,9 @@ sudo journalctl -u namada-rpc-proxy -f
 # Restart service
 sudo systemctl restart namada-rpc-proxy
 ```
+
+**Node.js Memory Issues:**
+The service is configured with `MemoryDenyWriteExecute=yes` commented out because this systemd security feature is incompatible with Node.js V8 JIT (Just-In-Time) compilation. This is a known compatibility issue where Node.js needs to allocate executable memory pages for JavaScript compilation, which this security restriction blocks.
 
 ### Nginx Configuration
 
