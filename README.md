@@ -1,422 +1,396 @@
 # Namada RPC Proxy
 
-A performant, publicly accessible CometBFT RPC proxy and load balancer for Namada mainnet and testnets. The system automatically monitors RPC endpoint health and intelligently routes requests to the most responsive and synchronized nodes.
+A high-performance, production-ready multi-chain CometBFT RPC proxy and load balancer for Namada mainnet and testnets. This system automatically monitors RPC endpoint health and intelligently routes requests to the most responsive and synchronized nodes.
 
-## Features
+## 🏗️ System Overview
 
-- **Multi-Chain Support**: Concurrent support for Namada mainnet and testnets
-- **Intelligent Load Balancing**: Weighted round-robin with performance-based routing
-- **Health Monitoring**: Automatic RPC endpoint health checks and sync status tracking
-- **Archive Node Support**: Dedicated routing for archive node requests
-- **Circuit Breaker Pattern**: Automatic failure detection and recovery
-- **High Availability**: 99.9% uptime target with graceful degradation
-- **CORS Enabled**: Full cross-origin request support for web applications
-- **Comprehensive Monitoring**: Detailed metrics and health status endpoints
-- **Professional Logging**: Structured logging with rotation and component separation
+```
+Internet → Nginx (SSL, Rate Limiting) → Node.js App → Namada RPC Endpoints
+```
 
-## Architecture
+### Supported Networks
+- **Namada Mainnet**: `/namada/*` and `/namada/archive/*`
+- **Housefire Testnet**: `/housefiretestnet/*` and `/housefiretestnet/archive/*`
 
-### Multi-Chain Concurrent Design
-The system runs multiple network instances concurrently from a single deployment, with each chain maintaining its own isolated health monitoring, load balancing, and RPC pools.
+### Key Features
+- ✅ **Multi-chain concurrent support** with isolated health monitoring
+- ✅ **Automatic RPC discovery** from Luminara Hub registry  
+- ✅ **Intelligent load balancing** with circuit breakers
+- ✅ **Archive node detection** and routing
+- ✅ **Request validation** against CometBFT OpenAPI specification
+- ✅ **Production-ready** systemd service with security hardening
+- ✅ **SSL/TLS termination** with modern security headers
+- ✅ **Rate limiting** and DDoS protection
+- ✅ **Comprehensive monitoring** and health checks
 
-### Base URL Structure
-- **Service Domain**: `namacall.namadata.xyz`
-- **Mainnet Endpoint**: `/namada/{rpc_query}`
-- **Testnet Endpoint**: `/housefiretestnet/{rpc_query}`
-- **Archive Node Option**: `/namada/archive/{rpc_query}` or `/housefiretestnet/archive/{rpc_query}`
-
-## Quick Start
+## 🚀 Quick Installation (Ubuntu/Debian)
 
 ### Prerequisites
-- Node.js 18.0.0 or higher
-- npm or yarn package manager
 
-### Installation
+Fresh Ubuntu 20.04+ or Debian 11+ server with:
+- Root access
+- Domain name pointed to your server (`namacall.namadata.xyz`)
+- Minimum 2GB RAM, 2 CPU cores, 20GB disk
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd namada-rpc-proxy
-   ```
+### One-Command Installation
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+```bash
+# Clone and install
+git clone https://github.com/namadata/namada-rpc-proxy.git
+cd namada-rpc-proxy
+sudo ./deploy/install.sh
+```
 
-3. **Configure environment**
-   ```bash
-   cp config.env.example .env
-   # Edit .env with your configuration
-   ```
+The installer will:
+1. ✅ Install Node.js 18+ and nginx
+2. ✅ Create dedicated `namada-rpc-proxy` system user
+3. ✅ Install and configure the application
+4. ✅ Set up systemd service with security hardening
+5. ✅ Configure nginx with rate limiting and security headers
+6. ✅ Start the service automatically
 
-4. **Start the service**
-   ```bash
-   # Development
-   npm run dev
+### Post-Installation Steps
 
-   # Production
-   npm start
-   ```
+1. **Configure SSL certificate:**
+```bash
+sudo certbot --nginx -d namacall.namadata.xyz
+```
 
-The service will be available at `http://localhost:3000`
+2. **Verify installation:**
+```bash
+# Check service status
+sudo systemctl status namada-rpc-proxy
 
-## Configuration
+# Test endpoints
+curl https://namacall.namadata.xyz/health
+curl https://namacall.namadata.xyz/namada/status
+```
+
+## 📋 Manual Installation Guide
+
+### Step 1: System Preparation
+
+```bash
+# Update system
+sudo apt update && sudo apt upgrade -y
+
+# Install Node.js 18
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Install nginx and other dependencies
+sudo apt install -y nginx git curl certbot python3-certbot-nginx ufw
+
+# Configure firewall
+sudo ufw allow ssh
+sudo ufw allow 'Nginx Full'
+sudo ufw --force enable
+```
+
+### Step 2: Create Service User
+
+```bash
+# Create dedicated user
+sudo useradd --system --create-home --shell /bin/bash namada-rpc-proxy
+
+# Create installation directory
+sudo mkdir -p /home/namada-rpc-proxy/namada-rpc-proxy
+sudo chown namada-rpc-proxy:namada-rpc-proxy /home/namada-rpc-proxy/namada-rpc-proxy
+```
+
+### Step 3: Install Application
+
+```bash
+# Clone repository
+git clone https://github.com/your-repo/namada-rpc-proxy.git /tmp/namada-rpc-proxy
+
+# Copy files to service directory
+sudo cp -r /tmp/namada-rpc-proxy/* /home/namada-rpc-proxy/namada-rpc-proxy/
+sudo chown -R namada-rpc-proxy:namada-rpc-proxy /home/namada-rpc-proxy/namada-rpc-proxy
+
+# Install dependencies
+cd /home/namada-rpc-proxy/namada-rpc-proxy
+sudo -u namada-rpc-proxy npm install --production
+```
+
+### Step 4: Configure Environment
+
+```bash
+# Create environment file
+sudo cp deploy/production.env /home/namada-rpc-proxy/namada-rpc-proxy/.env
+sudo chown namada-rpc-proxy:namada-rpc-proxy /home/namada-rpc-proxy/namada-rpc-proxy/.env
+
+# Edit configuration (optional)
+sudo nano /home/namada-rpc-proxy/namada-rpc-proxy/.env
+```
+
+### Step 5: Install Systemd Service
+
+```bash
+# Install service file
+sudo cp deploy/namada-rpc-proxy.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable namada-rpc-proxy
+sudo systemctl start namada-rpc-proxy
+
+# Verify service
+sudo systemctl status namada-rpc-proxy
+```
+
+### Step 6: Configure Nginx
+
+```bash
+# Install nginx configuration
+sudo cp deploy/nginx-namada-rpc-proxy.conf /etc/nginx/sites-available/namada-rpc-proxy
+sudo ln -s /etc/nginx/sites-available/namada-rpc-proxy /etc/nginx/sites-enabled/
+
+# Test configuration
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### Step 7: Setup SSL
+
+```bash
+# Install SSL certificate
+sudo certbot --nginx -d namacall.namadata.xyz
+
+# Verify SSL setup
+sudo certbot certificates
+```
+
+## 🔧 Configuration
 
 ### Environment Variables
 
+Key configuration options in `.env`:
+
 ```bash
-# Server Configuration
-PORT=3000
+# Server
 NODE_ENV=production
+PORT=3000
+LOG_LEVEL=info
 
-# Service Configuration
-SERVICE_DOMAIN=namacall.namadata.xyz
-
-# Health Check Configuration
+# Health Monitoring  
 HEALTH_CHECK_INTERVAL=30000      # 30 seconds
-REGISTRY_UPDATE_INTERVAL=600000   # 10 minutes
-SYNC_THRESHOLD=50                # blocks
+REGISTRY_UPDATE_INTERVAL=600000  # 10 minutes
+SYNC_TOLERANCE_BLOCKS=50         # Block sync tolerance
+
+# Performance
+REQUEST_TIMEOUT=30000            # 30 second timeout
+REQUEST_RETRY_ATTEMPTS=3         # Retry failed requests
+CONNECTION_POOL_SIZE=50          # HTTP connection pool
 
 # Rate Limiting
-RATE_LIMIT_WINDOW_MS=900000      # 15 minutes
-RATE_LIMIT_MAX_REQUESTS=1000
-
-# Logging
-LOG_LEVEL=info
-LOG_MAX_FILES=30
-LOG_MAX_SIZE=100m
-
-# Registry URLs
-MAINNET_REGISTRY_URL=https://raw.githubusercontent.com/Luminara-Hub/namada-ecosystem/main/user-and-dev-tools/mainnet/rpc.json
-TESTNET_REGISTRY_URL=https://raw.githubusercontent.com/Luminara-Hub/namada-ecosystem/main/user-and-dev-tools/testnet/housefire/rpc.json
-
-# Request Configuration
-REQUEST_TIMEOUT=10000            # 10 seconds
-HEALTH_CHECK_TIMEOUT=5000        # 5 seconds
-```
-
-## API Usage
-
-### RPC Endpoints
-
-#### Mainnet
-```bash
-# Regular RPC calls
-POST /namada/status
-POST /namada/abci_query
-
-# Archive node calls
-POST /namada/archive/block?height=1
-POST /namada/archive/blockchain?minHeight=1&maxHeight=100
-```
-
-#### Testnet
-```bash
-# Regular RPC calls
-POST /housefiretestnet/status
-POST /housefiretestnet/abci_query
-
-# Archive node calls
-POST /housefiretestnet/archive/block?height=1
-POST /housefiretestnet/archive/blockchain?minHeight=1&maxHeight=100
-```
-
-### Example Usage
-
-#### Check Node Status
-```bash
-curl -X POST http://localhost:3000/namada/status
-```
-
-#### Submit Transaction
-```bash
-curl -X POST http://localhost:3000/namada/broadcast_tx_commit \
-  -H "Content-Type: application/json" \
-  -d '{"tx": "your_transaction_data"}'
-```
-
-#### Archive Query
-```bash
-curl -X POST http://localhost:3000/namada/archive/block \
-  -H "Content-Type: application/json" \
-  -d '{"height": "1"}'
-```
-
-### Health Check Endpoints
-
-#### Basic Health Check
-```bash
-GET /health
-```
-
-#### Detailed Health Information
-```bash
-GET /health/detailed
-```
-
-#### Chain-Specific Status
-```bash
-GET /health/chains/mainnet
-GET /health/chains/testnet
-```
-
-#### Performance Metrics
-```bash
-GET /health/metrics
-```
-
-#### Force Registry Refresh
-```bash
-POST /health/refresh
-POST /health/chains/mainnet/refresh
-```
-
-## Monitoring
-
-### Health Status Response
-```json
-{
-  "status": "healthy",
-  "timestamp": "2024-01-15T10:30:00Z",
-  "summary": {
-    "totalChains": 2,
-    "healthyChains": 2,
-    "totalRpcs": 15,
-    "healthyRpcs": 12
-  },
-  "chains": {
-    "mainnet": {
-      "status": "healthy",
-      "rpcs": {
-        "total": 8,
-        "healthy": 6,
-        "archive": 2
-      },
-      "blockHeight": 1234567
-    }
-  }
-}
-```
-
-### Metrics Response
-```json
-{
-  "timestamp": "2024-01-15T10:30:00Z",
-  "chains": {
-    "mainnet": {
-      "totalRequests": 10000,
-      "successfulRequests": 9950,
-      "failedRequests": 50,
-      "averageResponseTime": 150,
-      "successRate": 99.5
-    }
-  }
-}
-```
-
-## Development
-
-### Project Structure
-```
-src/
-├── config/           # Configuration management
-├── core/            # Core business logic
-│   ├── MultiChainManager.js
-│   ├── ChainInstance.js
-│   ├── HealthMonitor.js
-│   ├── LoadBalancer.js
-│   └── RegistryManager.js
-├── middleware/      # Express middleware
-├── routes/          # Route handlers
-├── utils/           # Utilities and helpers
-└── index.js         # Application entry point
-```
-
-### Scripts
-```bash
-npm start           # Start production server
-npm run dev         # Start development server with hot reload
-npm test            # Run tests
-npm run lint        # Run ESLint
-npm run lint:fix    # Fix ESLint issues
-```
-
-### Adding New Chains
-
-1. Add chain configuration to `src/config/config.js`:
-```javascript
-newchain: {
-  name: 'newchain',
-  displayName: 'New Chain',
-  registryUrl: 'https://example.com/registry.json',
-  basePath: '/newchain',
-  archivePath: '/newchain/archive'
-}
-```
-
-2. The system will automatically initialize the new chain on startup.
-
-## Deployment
-
-### Docker Deployment
-
-1. **Build Docker image**
-   ```bash
-   docker build -t namada-rpc-proxy .
-   ```
-
-2. **Run container**
-   ```bash
-   docker run -p 3000:3000 \
-     -e NODE_ENV=production \
-     -e PORT=3000 \
-     namada-rpc-proxy
-   ```
-
-### Production Deployment
-
-#### Using PM2
-```bash
-npm install -g pm2
-pm2 start src/index.js --name namada-rpc-proxy
-pm2 startup
-pm2 save
-```
-
-#### Using systemd
-Create `/etc/systemd/system/namada-rpc-proxy.service`:
-```ini
-[Unit]
-Description=Namada RPC Proxy
-After=network.target
-
-[Service]
-Type=simple
-User=ubuntu
-WorkingDirectory=/opt/namada-rpc-proxy
-ExecStart=/usr/bin/node src/index.js
-Restart=always
-RestartSec=10
-Environment=NODE_ENV=production
-
-[Install]
-WantedBy=multi-user.target
+RATE_LIMIT_MAX_REQUESTS=100      # Per minute per IP
 ```
 
 ### Nginx Configuration
 
-```nginx
-upstream namada_rpc_proxy {
-    server 127.0.0.1:3000;
-}
+The nginx setup includes:
+- **SSL/TLS**: Let's Encrypt integration with A+ security rating
+- **Rate Limiting**: 10 req/s for RPC, 1 req/s for health checks  
+- **Security Headers**: HSTS, CSP, X-Frame-Options, etc.
+- **CORS**: Proper headers for web application integration
+- **Monitoring**: Internal localhost:8080 for detailed metrics
 
-server {
-    listen 80;
-    server_name namacall.namadata.xyz;
+### Systemd Service
 
-    location / {
-        proxy_pass http://namada_rpc_proxy;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-        proxy_connect_timeout 10s;
-        proxy_send_timeout 10s;
-        proxy_read_timeout 30s;
-    }
-}
-```
+Security features:
+- **Isolated User**: Runs as dedicated `namada-rpc-proxy` user
+- **Filesystem Protection**: Read-only access except for logs
+- **Resource Limits**: Memory (1GB) and CPU (200%) caps
+- **Network Restrictions**: Only allowed address families
+- **Auto-restart**: Automatic recovery from failures
 
-### Kubernetes Deployment
+## 📊 Monitoring & Health Checks
 
-See `k8s/` directory for Kubernetes manifests including:
-- Deployment configuration
-- Service definition
-- ConfigMap for environment variables
-- Ingress configuration
+### Health Endpoints
 
-## Performance
+- `GET /health` - Basic service health
+- `GET /health/detailed` - Detailed chain status (internal only)
+- `GET /health/metrics` - Performance metrics (internal only)
+- `GET /health/chains/:chainKey` - Individual chain status
+- `GET /health/rpc-endpoints` - Available RPC endpoints
 
-### Benchmarks
-- **Latency**: Sub-100ms average response time
-- **Throughput**: 1000+ requests per minute per chain
-- **Availability**: 99.9% uptime target
-- **Scalability**: Horizontal scaling support
+### Monitoring Commands
 
-### Optimization Tips
-1. **Connection Pooling**: Automatic HTTP connection reuse
-2. **Circuit Breakers**: Prevent cascade failures
-3. **Load Balancing**: Performance-based RPC selection
-4. **Caching**: Response caching for static queries
-5. **Monitoring**: Real-time performance tracking
-
-## Troubleshooting
-
-### Common Issues
-
-#### Service Not Starting
 ```bash
-# Check logs
-npm run dev
+# Service status
+sudo systemctl status namada-rpc-proxy
+sudo journalctl -u namada-rpc-proxy -f
 
-# Verify configuration
-node -e "console.log(require('./src/config/config'))"
+# Resource usage
+sudo systemctl show namada-rpc-proxy --property=MemoryCurrent,CPUUsageNSec
+
+# Nginx logs
+sudo tail -f /var/log/nginx/namada-rpc-proxy.access.log
+sudo tail -f /var/log/nginx/namada-rpc-proxy.error.log
+
+# Test endpoints
+curl https://namacall.namadata.xyz/health
+curl https://namacall.namadata.xyz/namada/status
+curl https://namacall.namadata.xyz/housefiretestnet/status
 ```
 
-#### No Healthy RPCs
-- Check registry URLs are accessible
-- Verify RPC endpoints are responding
-- Review health check logs
+## 🛠️ Maintenance
 
-#### High Response Times
-- Monitor RPC endpoint performance
-- Check network connectivity
-- Review load balancer metrics
+### Update Scripts
 
-### Debugging
+The system includes automated update scripts for easy maintenance:
 
-Enable debug logging:
+#### Manual Updates
 ```bash
-LOG_LEVEL=debug npm start
+# Full interactive update with prompts
+sudo /home/namada-rpc-proxy/namada-rpc-proxy/deploy/update.sh
+
+# Simple maintenance check (for cron)
+sudo /home/namada-rpc-proxy/namada-rpc-proxy/deploy/maintenance.sh
 ```
 
-Check health status:
+#### Automatic Updates
+The installer can set up daily automatic maintenance checks:
+- **Schedule**: Daily at 2 AM
+- **Function**: Checks for updates and applies them automatically
+- **Logging**: Writes to `/var/log/namada-rpc-proxy-maintenance.log`
+- **Safety**: Only updates if available, includes rollback capability
+
 ```bash
-curl http://localhost:3000/health/detailed
+# View maintenance logs
+sudo tail -f /var/log/namada-rpc-proxy-maintenance.log
+
+# Manually trigger maintenance check
+sudo /home/namada-rpc-proxy/namada-rpc-proxy/deploy/maintenance.sh
 ```
 
-## Contributing
+### Update Script Features
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+The update script includes:
+- ✅ **Pre-update validation** (service status, nginx config, disk space)
+- ✅ **Automatic backup creation** with timestamp
+- ✅ **Git-based updates** with version tracking
+- ✅ **Dependency management** (npm ci --production)
+- ✅ **Configuration change detection** (nginx, systemd, env)
+- ✅ **Health checks** post-update
+- ✅ **Automatic rollback** on failure
+- ✅ **Backup cleanup** (keeps last 5 backups)
 
-### Code Style
-- Follow ESLint configuration
-- Use meaningful variable names
-- Add JSDoc comments for functions
-- Maintain test coverage
+### Regular Tasks
 
-## License
+```bash
+# Update application (interactive)
+sudo /home/namada-rpc-proxy/namada-rpc-proxy/deploy/update.sh
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+# Quick maintenance check
+sudo /home/namada-rpc-proxy/namada-rpc-proxy/deploy/maintenance.sh
 
-## Support
+# SSL certificate renewal (automatic)
+sudo certbot renew --dry-run
 
-For support and questions:
-- Open an issue on GitHub
-- Check the troubleshooting guide
-- Review the API documentation
+# Check SSL certificate status
+sudo certbot certificates
 
-## Acknowledgments
+# Manual certificate renewal
+sudo certbot --nginx -d namacall.namadata.xyz
 
-- Namada Protocol team
-- Luminara Hub for registry maintenance
-- CometBFT for the RPC specification 
+# Log rotation (automatic via logrotate)
+# - Systemd journal: automatic cleanup
+# - Application logs: 30-day rotation  
+# - Nginx logs: logrotate handles this
+# - Maintenance logs: weekly rotation
+```
+
+### Troubleshooting
+
+```bash
+# Service won't start
+sudo journalctl -u namada-rpc-proxy --no-pager
+sudo systemctl status namada-rpc-proxy
+
+# Nginx issues  
+sudo nginx -t
+sudo systemctl status nginx
+
+# Performance issues
+htop
+sudo netstat -tlnp | grep :3000
+```
+
+## 🔒 Security
+
+### Network Security
+- **Firewall**: Only SSH, HTTP, and HTTPS ports open
+- **SSL/TLS**: A+ rated configuration with HSTS
+- **Rate Limiting**: DDoS protection at nginx level
+- **Request Validation**: Invalid requests blocked before forwarding
+
+### Application Security  
+- **Dedicated User**: Isolated system user with minimal privileges
+- **Filesystem Protection**: Read-only access with restricted paths
+- **Resource Limits**: Memory and CPU usage caps
+- **Input Validation**: All RPC requests validated against OpenAPI spec
+
+### Monitoring Security
+- **Internal Endpoints**: Detailed metrics only on localhost
+- **Access Logs**: Comprehensive request logging
+- **Error Tracking**: Structured error logging with correlation IDs
+
+## 📚 API Documentation
+
+### RPC Endpoints
+
+**Namada Mainnet:**
+- `POST/GET /namada/{rpc_method}` - Standard RPC endpoints
+- `POST/GET /namada/archive/{rpc_method}` - Archive node endpoints
+
+**Housefire Testnet:**  
+- `POST/GET /housefiretestnet/{rpc_method}` - Standard RPC endpoints
+- `POST/GET /housefiretestnet/archive/{rpc_method}` - Archive node endpoints
+
+### Available RPC Methods
+
+All CometBFT RPC methods are supported:
+- `status`, `health`, `net_info` - Node information
+- `block`, `block_by_hash`, `blockchain` - Block data  
+- `tx`, `tx_search`, `block_search` - Transaction queries
+- `validators`, `consensus_params` - Network parameters
+- `abci_query`, `abci_info` - Application queries
+- `broadcast_tx_*` - Transaction broadcasting
+
+### Request Validation
+
+Requests are validated against the CometBFT OpenAPI specification:
+- ✅ **Parameter Types**: Automatic type coercion and validation
+- ✅ **Required Fields**: Missing parameters are rejected with helpful errors
+- ✅ **Method Support**: Only supported HTTP methods allowed
+- ✅ **Endpoint Discovery**: Typo suggestions for invalid endpoints
+
+## 🎯 Production Deployment
+
+This setup is production-ready with:
+
+- **99.9% Uptime Target**: Auto-restart, health monitoring, circuit breakers
+- **High Performance**: Connection pooling, efficient load balancing  
+- **Security Hardened**: Modern TLS, security headers, input validation
+- **Scalable**: Easy horizontal scaling with multiple instances
+- **Observable**: Comprehensive logging, metrics, and monitoring
+- **Maintainable**: Automated updates, log rotation, SSL renewal
+
+## 📞 Support
+
+For issues and questions:
+1. Check service logs: `sudo journalctl -u namada-rpc-proxy -f`
+2. Verify configuration: `sudo nginx -t` 
+3. Test endpoints: `curl https://namacall.namadata.xyz/health`
+4. Review documentation: `/deploy/README.md`
+5. Open GitHub issue with logs and error details
+
+## 📄 License
+
+[MIT License](LICENSE) - See LICENSE file for details.
+
+---
+
+**Live Endpoint**: `https://namacall.namadata.xyz`
+
+Built with ❤️ for the Namada ecosystem. 

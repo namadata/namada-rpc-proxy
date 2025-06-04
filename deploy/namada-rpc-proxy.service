@@ -1,0 +1,49 @@
+[Unit]
+Description=Namada RPC Proxy - Multi-chain CometBFT load balancer
+Documentation=https://github.com/namadata/namada-rpc-proxy
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=namada-rpc-proxy
+Group=namada-rpc-proxy
+WorkingDirectory=/home/namada-rpc-proxy/namada-rpc-proxy
+ExecStart=/usr/bin/node src/index.js
+Restart=always
+RestartSec=10
+TimeoutStopSec=30
+
+# Environment variables
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=LOG_LEVEL=info
+
+# Security settings
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/namada-rpc-proxy/namada-rpc-proxy/logs
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictRealtime=yes
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+MemoryMax=1G
+CPUQuota=200%
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=namada-rpc-proxy
+
+[Install]
+WantedBy=multi-user.target 
