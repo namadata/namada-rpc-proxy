@@ -38,6 +38,7 @@ Fresh Ubuntu 20.04+ or Debian 11+ server with:
 # Clone and install
 git clone https://github.com/namadata/namada-rpc-proxy.git
 cd namada-rpc-proxy
+chmod +x deploy/install.sh
 sudo ./deploy/install.sh
 ```
 
