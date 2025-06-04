@@ -23,6 +23,67 @@ Internet → Nginx (SSL, Rate Limiting) → Node.js App → Namada RPC Endpoints
 - ✅ **Rate limiting** and DDoS protection
 - ✅ **Comprehensive monitoring** and health checks
 
+## 🔒 Security
+
+### Network Security
+- **Firewall**: Only SSH, HTTP, and HTTPS ports open
+- **SSL/TLS**: A+ rated configuration with HSTS
+- **Rate Limiting**: DDoS protection at nginx level
+- **Request Validation**: Invalid requests blocked before forwarding
+
+### Application Security  
+- **Dedicated User**: Isolated system user with minimal privileges
+- **Filesystem Protection**: Read-only access with restricted paths
+- **Resource Limits**: Memory and CPU usage caps
+- **Input Validation**: All RPC requests validated against OpenAPI spec
+
+### Monitoring Security
+- **Internal Endpoints**: Detailed metrics only on localhost
+- **Access Logs**: Comprehensive request logging
+- **Error Tracking**: Structured error logging with correlation IDs
+
+## 📚 API Documentation
+
+### RPC Endpoints
+
+**Namada Mainnet:**
+- `POST/GET /namada/{rpc_method}` - Standard RPC endpoints
+- `POST/GET /namada/archive/{rpc_method}` - Archive node endpoints
+
+**Housefire Testnet:**  
+- `POST/GET /housefiretestnet/{rpc_method}` - Standard RPC endpoints
+- `POST/GET /housefiretestnet/archive/{rpc_method}` - Archive node endpoints
+
+### Available RPC Methods
+
+All CometBFT RPC methods are supported:
+- `status`, `health`, `net_info` - Node information
+- `block`, `block_by_hash`, `blockchain` - Block data  
+- `tx`, `tx_search`, `block_search` - Transaction queries
+- `validators`, `consensus_params` - Network parameters
+- `abci_query`, `abci_info` - Application queries
+- `broadcast_tx_*` - Transaction broadcasting
+
+### Request Validation
+
+Requests are validated against the CometBFT OpenAPI specification:
+- ✅ **Parameter Types**: Automatic type coercion and validation
+- ✅ **Required Fields**: Missing parameters are rejected with helpful errors
+- ✅ **Method Support**: Only supported HTTP methods allowed
+- ✅ **Endpoint Discovery**: Typo suggestions for invalid endpoints
+
+## 🎯 Production Deployment
+
+This setup is production-ready with:
+
+- **99.9% Uptime Target**: Auto-restart, health monitoring, circuit breakers
+- **High Performance**: Connection pooling, efficient load balancing  
+- **Security Hardened**: Modern TLS, security headers, input validation
+- **Scalable**: Easy horizontal scaling with multiple instances
+- **Observable**: Comprehensive logging, metrics, and monitoring
+- **Maintainable**: Automated updates, log rotation, SSL renewal
+
+
 ## 🚀 Quick Installation (Ubuntu/Debian)
 
 ### Prerequisites
